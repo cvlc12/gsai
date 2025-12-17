@@ -2,6 +2,7 @@
 # Copyright (c) 2025 cvlc12
 
 TODO:
+installation README
 version number
 local variables
 if output is specified, don't prompt for bakcup dest for signed iso (signed only)

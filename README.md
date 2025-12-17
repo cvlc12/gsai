@@ -2,7 +2,9 @@
 
 ### Gsai Signs Arch Isos. A simple shell script to download and sign Arch Linux ISOs for use with Secure Boot
 
-#  ! WIP ! not ready for use !
+## Disclaimer
+	
+Use at your own risk :)
 
 ## Installation
 
