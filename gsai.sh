@@ -264,14 +264,51 @@ gsai_select_keys() {
         if [[ -r "$key" && -r "$cert" ]]; then
             info "Keys are readable! This might be a security risk."
             sign_cmd=("$sign_util")
+        elif [[ -n "$sudo_cmd" ]]; then
+            (( verbose )) && info "Elevating privileges with ${sudo_cmd}."
+            sign_cmd=("$sudo_cmd" "$sign_util")
         else
-            (( verbose )) && info "Keys are not readable, using ${sudo_cmd} to elevate privileges."
+            (( verbose )) && info "Keys are not readable, trying to elevate privileges."
+            
+            # Verify we can use run0
+            min_pk_ver=127
 
-            # If using sudo, verify sudoers
-            if [[ "$sudo_cmd" == sudo ]]; then
-                sudo -l &>/dev/null || err "Not in sudoers!"
+            if command -v pkcheck >/dev/null 2>&1; then
+                version=$(pkcheck --version 2>/dev/null | awk '{print $NF}')
+                if [[ $version =~ ^[0-9]+$ ]] && (( version >= min_pk_ver )); then
+                    (( verbose )) && info "Using run0"
+                    sudo_cmd=run0
+                fi
+            fi
+            
+            # Else try sudo
+            if [[ -z "$sudo_cmd" ]]; then
+    
+                (( verbose )) && info "Not using run0, polkit too old or version unknown."
+
+                # Verify sudo
+                if command_exists 'sudo'; then
+                    if sudo -l &>/dev/null; then
+                        (( verbose )) && info "Using sudo"
+                        sudo_cmd=sudo
+                    fi
+                fi
             fi
 
+            # Else try doas
+            if [[ -z "$sudo_cmd" ]]; then
+    
+                (( verbose )) && info "Not using 'sudo', not in 'sudoers' or 'sudo' not installed."
+
+                # Verify doas
+                if command_exists 'doas'; then
+                    sudo_cmd=sudo
+                else
+                    (( verbose )) && info "Not using 'doas', not installed."
+                    err "⚠️  Could not elevate privileges. Try running as root."  
+                fi
+            fi
+            
             msg "If requested by ${sudo_cmd}, enter password to access protected Secure Boot keys."
             sign_cmd=("$sudo_cmd" "$sign_util")
         fi
@@ -287,7 +324,7 @@ parse_args() {
     output_dir=""
     verbose=0
     verified_iso=0
-    sudo_cmd='run0'
+    sudo_cmd=""
 
     # Parse command-line arguments
     while [[ $# -gt 0 ]]; do
@@ -298,7 +335,7 @@ parse_args() {
             --escalate-with)
                 shift
                 sudo_cmd="$1"
-                [[ "$sudo_cmd" == 'sudo' || "$sudo_cmd" == 'doas' ]] || err "Not a valid escalation command"
+                [[ "$sudo_cmd" == 'run0' || "$sudo_cmd" == 'sudo' || "$sudo_cmd" == 'doas' ]] || err "Not a valid escalation command"
                 ;;
             -h | --help)
                 usage
@@ -336,7 +373,7 @@ usage() {
 version: ${version}
   Options:
        --autosign                Automatically sign if only one set of Secure Boot signing keys are found
-       --escalate-with           Takes one of 'sudo' or 'doas' to avoid using run0
+       --escalate-with           Takes one of 'run0' 'sudo' or 'doas'
    -h, --help                    Won't help you much
        --iso                     Specify an Arch Linux ISO image file
        --offline                 Prompt for the paths of necessary files instead of fetching them online
