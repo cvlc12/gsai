@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2025 cvlc12
+
 pkgname=gsai-git
 pkgver=$(make version)
 pkgrel=1
