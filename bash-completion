@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+_gsai() {
+    local cur prev opts
+    opts=(--autosign --escalate-with -h --help --iso --offline -v --verbose)
+
+    _get_comp_words_by_ref cur prev
+
+    case $prev in
+        -i | --iso)
+            _filedir '@(iso)'
+            ;;
+        *)
+            mapfile -t COMPREPLY < <(compgen -W "${opts[*]}" -- "$cur")
+            ;;
+    esac
+}
+
+complete -F _gsai gsai

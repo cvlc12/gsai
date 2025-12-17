@@ -1,0 +1,16 @@
+#compdef gsai
+
+case $service in
+    gsai)
+        _arguments : \
+            '--autosign[Automatically sign if only one set of Secure Boot signing keys are automatically found]' \
+            '--escalate-with[Takes one of sudo or doas to avoid using run0]' \
+            '(-h --help)'{-h,--help}'[Will not help you much]' \
+            '--iso[Specify an Arch Linux ISO image file]' \
+            '--offline[Prompt for the paths of necessary files instead of fetching them online]' \
+            '(-v --verbose)'{-v,--verbose}'[Verbose output]'
+        ;;
+    *)
+        return 1;
+        ;;
+esac

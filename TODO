@@ -1,0 +1,7 @@
+TODO:
+version number
+local variables
+if output is specified, don't prompt for bakcup dest for signed iso (signed only)
+better traps
+set up xdg_data_dirs for isos + configs (keys paths, mirrors...)
+Poviders, specific key paths
