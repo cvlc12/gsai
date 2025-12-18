@@ -11,8 +11,10 @@ Use at your own risk :)
 ```
 # pacman -S --asdeps --needed libisoburn mtools
 $ git clone repo
-# ln -s "$PWD"/gsai/gsai.sh /usr/local/bin/gsai
+# ln -s "$PWD"/gsai/gsai.sh ~/.local/bin/gsai
 ```
+
+(You might have to add `~/.local/bin` to your user's `PATH`)
 
 ## Usage
 
