@@ -56,6 +56,56 @@ clean() {
     fi
 }
 
+gsai_burn() {
+
+# handle root
+local umount_cmd=("umount")
+local dd_cmd=("dd")
+local sync_cmd=("sync")
+
+if (( EUID )); then  
+    umount_cmd=("$sudo_cmd" "${umount_cmd[@]}")
+    dd_cmd=("$sudo_cmd" "${dd_cmd[@]}")
+    sync_cmd=("$sudo_cmd" "${sync_cmd[@]}")
+    (( verbose )) && info "elevating privileges with ${sudo_cmd}"
+fi
+
+# Unmount partitions
+local mountpoints
+mountpoints=$(lsblk "${device}" -nr -o NAME,MOUNTPOINT | awk '$2!="" {print $1,$2}')
+
+if [[ -n "$mountpoints" ]]; then
+    while read -r part mnt; do
+        if "${umount_cmd[@]}" "/dev/${part}"; then
+            (( verbose )) && info "Unmounted: /dev/${part} from ${mnt}."
+        else
+            err "Failed to unmount: /dev/${part} from ${mnt}."
+        fi
+    done <<< "$mountpoints"
+else
+    (( verbose )) && info "${device} has no mounted partitions."
+fi
+
+# Erase a possible GPT backup header
+local sectors
+sectors=$(cat "/sys/class/block/$(basename "$device")/size")
+
+if [[ "$sectors" =~ ^[0-9]+$ ]]; then
+    local last_sector
+    last_sector=$((sectors - 1))
+    if "${dd_cmd[@]}" if=/dev/zero of="$device" bs=512 seek="$last_sector" count=1 status=none; then
+        (( verbose )) && info "Erased possible GPT backup header at end of /dev/${device} (sector ${last_sector})..."
+    else
+        (( verbose )) && info "⚠️ Failed to erase possible GPT backup header at end of /dev/${device} (sector ${last_sector})..."
+    fi
+else
+     (( verbose )) && info "⚠️ Invalid sector count. Skipping GPT backup header wipe."
+fi
+
+"${dd_cmd[@]}" if="$signed_iso" of="$device" bs=4M conv=fsync oflag=direct status=progress || err "Could not burn"
+"${sync_cmd[@]}" 
+}
+
 gsai_download_iso() {
     local -a mirrors
     local mirrorlist="/etc/pacman.d/mirrorlist"
@@ -548,3 +598,19 @@ xorriso -indev "$iso" \
     -append_partition 2 0xef "${work_dir}/eltorito_img2_uefi.img" &>/dev/null || err "Could not repack with xorriso!"
 
 msg_green "DONE!" "Successfully created signed ISO: $(basename "$signed_iso")"
+
+# Only try burning is no output was selected
+if [[ -z "$output_dir" ]]; then
+
+    # Try to locate suitable device
+    device="$(xorriso-dd-target -image_file "$signed_iso")"
+    
+    if [[ -n "$device" ]]; then
+        device="/dev/${device}"
+        echo "--> Burn the signed Arch Linux ISO to ${device}? 🔥" 
+        ask "⚠️  THIS WILL OVERWRITE ALL DATA ON ${device} !! ⚠️  Type 'burn' to confirm. " 
+        [[ "$answer" == 'burn' ]] && gsai_burn
+    else
+        (( verbose )) && info "Found no suitable device for burning the Arch Linux ISO image."
+    fi
+fi
