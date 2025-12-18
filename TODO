@@ -1,11 +1,6 @@
-# SPDX-License-Identifier: MIT
-# Copyright (c) 2025 cvlc12
-
-TODO:
-installation README
 version number
 local variables
-if output is specified, don't prompt for bakcup dest for signed iso (signed only)
+if output is specified, don't prompt for backup dest for signed iso (signed only)
 better traps
 set up xdg_data_dirs for isos + configs (keys paths, mirrors...)
 Poviders, specific key paths

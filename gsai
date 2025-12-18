@@ -382,11 +382,19 @@ EOF
 # Script
 # ----------------------------------------------------------------------------------------
 
-# Resolve the directory where the script is located, even if it's symlinked
-SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
+# Default library directory (installed location)
+: "${GSAI_LIBDIR:=/usr/lib/gsai}"
 
-# Source the utility and function files
-source "${SCRIPT_DIR}/gsai_utils.sh"
+if [[ -r "$GSAI_LIBDIR/gsai_utils.sh" ]]; then
+    # Installed mode
+    # shellcheck source=/usr/lib/gsai/gsai_utils.sh
+    source "$GSAI_LIBDIR/gsai_utils.sh"
+else
+    # Development mode (git clone)
+    SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
+    # shellcheck source=../lib/gsai_utils.sh
+    source "${SCRIPT_DIR}/lib/gsai_utils.sh"
+fi
 
 # Enable colors
 if [[ -t 2 && -n "$COLORTERM" ]]; then

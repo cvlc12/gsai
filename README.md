@@ -2,10 +2,6 @@
 
 ### Gsai Signs Arch Isos. A simple shell script to download and sign Arch Linux ISOs for use with Secure Boot
 
-## Disclaimer
-	
-Use at your own risk :)
-
 ## Installation
 
 ```
@@ -63,6 +59,7 @@ DONE! - Successfully created signed ISO: archlinux-2025.12.01-x86_64-signed.iso
 
 ## Roadmap
 - [ ] Support burning to usb.
+
 
 ## Authors and acknowledgment
 [Arch Wiki](https://wiki.archlinux.org/title/Unified_Extensible_Firmware_Interface/Secure_Boot#ISO_repacking)
