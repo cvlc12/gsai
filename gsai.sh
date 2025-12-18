@@ -56,31 +56,25 @@ clean() {
     fi
 }
 
-gsai_download_iso() {
+download_iso() {
     local -a mirrors
     local mirrorlist="/etc/pacman.d/mirrorlist"
-    local mirrors_page="https://archlinux.org/mirrorlist/all/https/"
-    local default_mirror
-    local fallback_mirror="https://geo.mirror.pkgbuild.com"
-
-    # Add any forced mirror
+    local fallback_mirrors=(
+        "https://fastly.mirror.pkgbuild.com"
+        "https://geo.mirror.pkgbuild.com"
+    )
 
     # Populate mirrors from local mirrorlist
     if [[ -f "$mirrorlist" ]]; then
         # shellcheck disable=SC2016
         mapfile -t mirrors < <(grep '^Server =' "$mirrorlist" | sed -E 's/^Server = //;s|/\$repo/os/\$arch/?$||')
         if (( ${#mirrors[@]} > 0 )); then
-            (( verbose )) && info "Loaded mirrors from ${mirrorlist}"
+            info "Loaded mirrors from ${mirrorlist}"
         fi
     fi
 
-    # Add mirrors from Arch Linux mirrors page 
-    # shellcheck disable=SC2016
-    default_mirror="$(curl -fsL "$mirrors_page" | grep -m1 'Server' | sed -E 's/^#?Server = //;s|/\$repo/os/\$arch/?$||')"
-    [[ -n "$default_mirror" ]] && mirrors+=("$default_mirror")
-
-    # Add fallback mirror just in case everything else failed.
-    mirrors+=("$fallback_mirror")
+    # Add fallback mirrors 
+    mirrors+=("${fallback_mirrors[@]}")
 
     (( ${#mirrors[@]} == 0 )) && err "No valid mirrors found!"
 
@@ -90,7 +84,7 @@ gsai_download_iso() {
     for mirror in "${mirrors[@]}"; do
         local iso_url="${mirror}/iso/${release}/archlinux-${release}-x86_64.iso"
         (( verbose )) && info "Trying mirror" "$mirror"
-        if curl --output-dir "$work_dir" --progress-bar --remote-name "$iso_url"; then
+        if curl --connect-timeout 3 --speed-limit 10240 --output-dir "$work_dir" --progress-bar --remote-name "$iso_url"; then
             msg "Successfully downloaded Arch Linux ISO from ${mirror}"
             iso="${work_dir}/archlinux-${release}-x86_64.iso"
             return 0
@@ -102,7 +96,7 @@ gsai_download_iso() {
     err "Failed to download ISO from all mirrors!"
 }
 
-gsai_verify_iso() {
+verify_iso() {
 
     msg "Verifying ISO..."
 
@@ -118,13 +112,15 @@ gsai_verify_iso() {
     verified_iso=1
 }
 
-gsai_select_keys() {
+select_keys() {
     
     local -a uki_conf_dirs key_path_list local_keys
 
     (( verbose )) && msg "Locating keys..."
 
     # Try to locate existing keys. Maximum 9 items in key_path_list (in local_keys really) or the 'case' code below needs modification.
+    # TODO: there 'might' be more than 9 items
+    
     # Try uki.conf 
     uki_conf_dirs=(
         "/etc/kernel"
@@ -482,7 +478,7 @@ else
             (( verbose )) && info "Could not get magnet link!"
         fi
 
-        gsai_download_iso
+        download_iso
     fi
 fi
 
@@ -492,9 +488,9 @@ fi
     info "b2sums" "$b2sums"
 }
 
-gsai_verify_iso
+verify_iso
 
-gsai_select_keys
+select_keys
 
 msg "Configuring Arch Linux ISO image..."
 
