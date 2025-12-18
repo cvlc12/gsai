@@ -10,11 +10,16 @@ Use at your own risk :)
 
 ```
 # pacman -S --asdeps --needed libisoburn mtools
-$ git clone repo
-# ln -s "$PWD"/gsai/gsai.sh ~/.local/bin/gsai
+$ git clone https://github.com/cvlc12/gsai.git
+$ ln -s "$PWD"/gsai/gsai.sh ~/.local/bin/gsai
 ```
 
-(You might have to add `~/.local/bin` to your user's `PATH`)
+You might have to add `~/.local/bin` to your user's `PATH`, e.g.:
+
+```
+$ nano .config/environment.d/10-path.conf
+PATH="$HOME/.local/bin:$PATH"
+```
 
 ## Usage
 
@@ -24,7 +29,7 @@ GSAI - Sign Arch Linux ISOs for Secure Boot
 version: 0
   Options:
        --autosign                Automatically sign if only one set of Secure Boot signing keys are automatically found
-       --escalate-with           Takes one of 'sudo' or 'doas' to avoid using run0
+       --escalate-with           Takes one of 'run0', 'sudo' or 'doas'
    -h, --help                    Won't help you much
        --iso                     Specify an Arch Linux ISO image file
        --offline                 Prompt for the paths of necessary files instead of fetching them online
