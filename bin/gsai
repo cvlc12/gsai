@@ -262,9 +262,11 @@ select_keys() {
         else
             (( verbose )) && info "Keys are not readable, trying to elevate privileges."
             
+            msg "If requested, enter password to access protected Secure Boot keys."
+
             # Verify we can use run0
-            # Polkit <127 requires re-auth for every file
-            min_pk_ver=127
+            # Currently run0 requires re-auth for every file...
+            min_pk_ver=128
 
             if command_exists 'pkcheck'; then
                 version=$(pkcheck --version 2>/dev/null | awk '{print $NF}')
@@ -302,7 +304,6 @@ select_keys() {
                 fi
             fi
             
-            msg "If requested by ${sudo_cmd}, enter password to access protected Secure Boot keys."
             sign_cmd=("$sudo_cmd" "$sign_util")
         fi
     else
