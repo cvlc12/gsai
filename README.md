@@ -4,6 +4,10 @@
 
 ## Installation
 
+Available on [AUR](https://aur.archlinux.org/packages/gsai-git)
+
+Alternatively, clone the repo:
+
 ```
 # pacman -S --asdeps --needed libisoburn mtools
 $ git clone https://github.com/cvlc12/gsai.git
