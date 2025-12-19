@@ -8,11 +8,7 @@ trap 'echo; exit' SIGINT
 trap 'clean' EXIT
 
 # Configuration
-#declare -r version=%VERSION%
-version=0
 download_page="https://archlinux.org/download/"
-#cache_dir="${XDG_CACHE_HOME:-$HOME/.cache}/gsai"
-#config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/gsai"
 
 # Clean temporary files before exiting
 backup_iso() {
@@ -267,9 +263,10 @@ select_keys() {
             (( verbose )) && info "Keys are not readable, trying to elevate privileges."
             
             # Verify we can use run0
+            # Polkit <127 requires re-auth for every file
             min_pk_ver=127
 
-            if command -v pkcheck >/dev/null 2>&1; then
+            if command_exists 'pkcheck'; then
                 version=$(pkcheck --version 2>/dev/null | awk '{print $NF}')
                 if [[ $version =~ ^[0-9]+$ ]] && (( version >= min_pk_ver )); then
                     (( verbose )) && info "Using run0"
@@ -279,7 +276,7 @@ select_keys() {
             
             # Else try sudo
             if [[ -z "$sudo_cmd" ]]; then
-    
+
                 (( verbose )) && info "Not using run0, polkit too old or version unknown."
 
                 # Verify sudo
@@ -393,7 +390,7 @@ else
     # Development mode (git clone)
     SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
     # shellcheck source=../lib/gsai_utils.sh
-    source "${SCRIPT_DIR}/lib/gsai_utils.sh"
+    source "${SCRIPT_DIR}/../lib/gsai_utils.sh"
 fi
 
 # Enable colors
