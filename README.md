@@ -77,7 +77,8 @@ version: 0
        --iso                     Specify an Arch Linux ISO image file
        --offline                 Prompt for the paths of necessary files instead of fetching them online
        --output-dir              Output directory for signed iso
-   -v, --verbose                 Verbose output
+       --skip-iso-verification   Do not check iso integrity
+       -v, --verbose                 Verbose output
 
 EOF
 ```

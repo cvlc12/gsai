@@ -10,5 +10,5 @@ _arguments \
   '--iso=[Path to Arch Linux ISO image]:iso file:_files' \
   '--offline[Prompt for required files instead of downloading them]' \
   '--output-dir=[Writable output directory]:directory:_files -/' \
+  '--skip-iso-verification[Do not check iso integrity]' \
   '(-v --verbose)'{-v,--verbose}'[Enable verbose output]'
-

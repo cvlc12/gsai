@@ -355,6 +355,9 @@ parse_args() {
                 [[ -d "$1" && -w "$1" ]] || err "'$1' is not a writable directory"
                 output_dir="${1%/}"
                 ;;         
+            --skip-iso-verification)
+                verified_iso=1
+                ;;
             -v | --verbose)
                 verbose=1
                 ;;
@@ -499,7 +502,7 @@ fi
     info "b2sums" "$b2sums"
 }
 
-verify_iso
+(( verified_iso )) || verify_iso
 
 select_keys
 
