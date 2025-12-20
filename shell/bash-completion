@@ -4,13 +4,16 @@
 
 _gsai() {
     local cur prev opts
-    opts=(--autosign --escalate-with -h --help --iso --offline --output-dir --skip-iso-verification -v --verbose)
+    opts=(--autosign --config --escalate-with -h --help --iso --offline --output-dir --skip-iso-verification -v --verbose)
 
     _get_comp_words_by_ref cur prev
 
     case $prev in
         -i | --iso)
             _filedir '@(iso)'
+            ;;
+        --config)
+            _filedir '@(conf)'
             ;;
         --output-dir)
             _filedir -d

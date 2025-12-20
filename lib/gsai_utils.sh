@@ -87,3 +87,35 @@ msg_green() {
     local msg="$2"
     printf "%s%s%s - %s%s%s%s\n" "${BOLD}" "${GREEN}" "${title}" "${ALL_OFF}" "${BOLD}" "$msg" "${ALL_OFF}" >&2
 }
+
+load_keycert_conf() {
+    local file="$1"
+    local key=""
+    local cert=""
+
+    while IFS='=' read -r k v; do
+        # Skip comments and empty lines
+        [[ -z "$k" || "$k" == \#* ]] && continue
+
+        case "$k" in
+        key)
+            key="$v"
+            ;;
+        cert)
+            cert="$v"
+            ;;
+        *)
+            echo "Ignoring unknown key ${k} in ${file}" >&2
+            ;;
+        esac
+    done < "$file"
+
+    # Validate
+    if [[ -z "$key" || -z "$cert" ]]; then
+        info "Invalid config ${file} (missing key or certificate)"
+    else  
+        key_path_list+=( "${key} ${cert}" )
+        # shellcheck disable=2154
+        (( verbose )) && info "Found keys in ${file}!"
+    fi
+}

@@ -1,3 +1,4 @@
+Sourcing of utils is brittle in case of bot installed and cloned version present
 version number
 local variables
 if output is specified, don't prompt for backup dest for signed iso (signed only)

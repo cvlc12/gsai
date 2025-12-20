@@ -72,6 +72,7 @@ gsai - Sign Arch Linux ISOs for Secure Boot
 version: 0
   Options:
        --autosign                Automatically sign if only one set of Secure Boot signing keys are found
+       --config                  Specify a configuration file
        --escalate-with           Takes one of 'run0' 'sudo' or 'doas'
    -h, --help                    Won't help you much
        --iso                     Specify an Arch Linux ISO image file
@@ -81,6 +82,14 @@ version: 0
        -v, --verbose             Verbose output
 
 EOF
+```
+
+If your private key and certificate are not automatically discovered, you can specify them in a `.conf` file in "${XDG_CONFIG_HOME}/gsai/" or "/etc/gsai/", e.g:
+
+```
+$ cat ~/.config/gsai/keys.conf
+key=/path/to/key
+cert=/path/to/cert
 ```
 
 ## Roadmap
