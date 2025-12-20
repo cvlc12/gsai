@@ -4,7 +4,7 @@
 
 _gsai() {
     local cur prev opts
-    opts=(--autosign --escalate-with -h --help --iso --offline -v --verbose)
+    opts=(--autosign --escalate-with -h --help --iso --offline --output-dir -v --verbose)
 
     _get_comp_words_by_ref cur prev
 

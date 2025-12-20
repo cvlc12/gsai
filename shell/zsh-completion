@@ -11,6 +11,7 @@ case $service in
             '(-h --help)'{-h,--help}'[Will not help you much]' \
             '--iso[Specify an Arch Linux ISO image file]' \
             '--offline[Prompt for the paths of necessary files instead of fetching them online]' \
+            '--output-dir[Specify output directory]' \
             '(-v --verbose)'{-v,--verbose}'[Verbose output]'
         ;;
     *)
