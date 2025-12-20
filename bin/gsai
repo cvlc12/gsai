@@ -371,7 +371,7 @@ usage() {
     cat <<EOF
 version: ${version}
   Options:
-       --autosign                Automatically sign if only one set of Secure Boot signing keys are found
+       --autosign                Automatically sign if only one set of Secure Boot signing keys is found
        --escalate-with           Takes one of 'run0' 'sudo' or 'doas'
    -h, --help                    Won't help you much
        --iso                     Specify an Arch Linux ISO image file
