@@ -1,12 +1,29 @@
-# gsai
+# gsai — *Gsai Signs Arch ISOs*
 
-### Gsai Signs Arch Isos. A simple shell script to download and sign Arch Linux ISOs for use with Secure Boot
+**gsai** is a bash script that automates downloading, verifying, and signing official Arch Linux ISO images for use with Secure Boot and custom signing keys.
+
+## Features:
+
+- Automatically downloads the latest Arch Linux ISO
+- Verifies ISO integrity using checksums and PGP signatures
+- Works offline when provided with:
+  - an Arch Linux ISO
+  - its corresponding PGP signature
+  - checksum files
+- Detects custom Secure Boot signing keys in common locations or prompts interactively
+- Signs the official ISO following the Arch Wiki’s  
+  [Secure Boot ISO repacking procedure](https://wiki.archlinux.org/title/Unified_Extensible_Firmware_Interface/Secure_Boot#Sign_the_official_ISO_with_custom_keys)## Installation
 
 ## Installation
 
-Available on [AUR](https://aur.archlinux.org/packages/gsai-git)
+### AUR
 
-Alternatively, clone the repo:
+Available on the AUR as  
+[gsai-git](https://aur.archlinux.org/packages/gsai-git)
+
+### Manual Installation
+
+Clone the repository and install dependencies:
 
 ```
 # pacman -S --asdeps --needed libisoburn mtools

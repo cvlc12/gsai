@@ -1,2 +1,2 @@
 # Follow sourced files, including relative paths
--x
+external-sources=true
