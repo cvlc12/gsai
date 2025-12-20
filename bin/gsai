@@ -13,16 +13,22 @@ download_page="https://archlinux.org/download/"
 # Clean temporary files before exiting
 backup_iso() {
 
-    local target=${1}
-    local iso_status=${2}
-    if read_yes_no "Save ${iso_status} ISO image: $(basename "$target")?"; then
-        ask_path "back up ISO" backup_file "${local_dir:-${HOME}}/$(basename "$target")"
-        [[ -n "$backup_file" ]] || err "No path provided"
-        if mv "$target" "${backup_file:?}" &>/dev/null; then
-            msg "Created ${backup_file}"
-        else
-            err "Could not backup to ${backup_file}, did not clean up ${work_dir}"
-        fi
+    local source=${1}
+    local filename
+    filename="$(basename "$source")"
+
+    if [[ -n "$output_dir" ]]; then
+        dest="${output_dir}/${filename}"
+    else
+        ask_path "back up ISO" dest "${local_dir:-${HOME}}/${filename}"
+        [[ -n "$dest" ]] || err "No path provided"
+    fi
+
+    # TODO: don't overwrite existing file, deal with existing files
+    if mv "$source" "${dest:?}" &>/dev/null; then
+        msg_green "DONE!" "Successfully created ${dest}"
+    else
+        err "Could not backup to ${dest}, did not clean up ${work_dir}"
     fi
 }
 
@@ -31,16 +37,16 @@ clean() {
     # If we have not done anything yet, simply exit
     [[ -z "$work_dir" ]] && exit 0
 
-    # If we successfully signed an ISO
+    # If we successfully signed an ISO then suggest to save it before cleaning up
     if [[ -f "$signed_iso" ]]; then
-        # then suggest to save it before cleaning up if no output dir was selected
-        if [[ -z "$output_dir" ]]; then
-            backup_iso "$signed_iso" "signed" || err "Could not back up iso."
-        fi
+        backup_iso "$signed_iso" || err "Could not back up iso."
+    fi
 
-    # Else if we downloaded and verified an ISO, then suggest to save it before cleaning up
-    elif [[ "$use_local_iso" == 'no' ]] && (( verified_iso )); then
-        backup_iso "$iso" "verified (unsigned!)" || err "Could not back up verified (unsigned!) iso."
+    # If we downloaded and verified an ISO, then suggest to save it before cleaning up
+    if (( ! use_local_iso && verified_iso )); then
+        if read_yes_no "Save verified (*unsigned*) ISO image?"; then
+            backup_iso "$iso" || err "Could not back up verified (unsigned!) iso."
+        fi
     fi
 
     # Then, clean up and exit
@@ -381,7 +387,7 @@ parse_args() {
     sudo_cmd=""
     use_local_iso=0
     verbose=0
-    verified_iso=0
+    verify_iso=1
 
     # Parse command-line arguments
     while [[ $# -gt 0 ]]; do
@@ -422,7 +428,7 @@ parse_args() {
                 output_dir="${1%/}"
                 ;;         
             --skip-iso-verification)
-                verified_iso=1
+                verify_iso=0
                 ;;
             -v | --verbose)
                 verbose=1
@@ -456,7 +462,7 @@ EOF
 # Script
 # ----------------------------------------------------------------------------------------
 
-debug=0
+debug=1
 # Default library directory (installed location)
 : "${GSAI_LIBDIR:=/usr/lib/gsai}"
 
@@ -527,7 +533,11 @@ else
     fi
 fi
 
-(( verified_iso )) || verify_iso
+if (( verify_iso )); then
+    verify_iso
+else
+    verified_iso=0
+fi
 
 select_keys
 
@@ -559,19 +569,7 @@ mcopy -D oO -i "${work_dir}/eltorito_img2_uefi.img" "${work_dir}/BOOTx64.EFI" "$
 mcopy -D oO -i "${work_dir}/eltorito_img2_uefi.img" "${work_dir}/shellx64.efi" "${work_dir}/shellia32.efi" ::/ || err "Could not run mcopy command!"
 (( verbose )) && info "Ran mcopy commands"
 
-# If no output specified or file exists in output dir, revert to workdir 
-if [[ -z "$output_dir" ]]; then
-    signed_iso="${work_dir}/archlinux-${release}-x86_64-signed.iso"
-    output_dir=""
-elif [[ -f "${output_dir}/archlinux-${release}-x86_64-signed.iso" ]]; then
-    msg "Signed iso already exists in output dir!"
-    signed_iso="${work_dir}/archlinux-${release}-x86_64-signed.iso"
-    output_dir=""
-else
-    signed_iso="${output_dir}/archlinux-${release}-x86_64-signed.iso"
-fi
-
-(( verbose )) && info "Output path" "$signed_iso"
+signed_iso="${work_dir}/archlinux-${release}-x86_64-signed.iso"
 
 (( verbose )) && info "Running xorriso to repack"
 xorriso -indev "$iso" \
@@ -582,4 +580,4 @@ xorriso -indev "$iso" \
     -boot_image any replay \
     -append_partition 2 0xef "${work_dir}/eltorito_img2_uefi.img" &>/dev/null || err "Could not repack with xorriso!"
 
-msg_green "DONE!" "Successfully created signed ISO: $(basename "$signed_iso")"
+(( verbose )) && info "Successfully created signed ISO: $(basename "$signed_iso")"
