@@ -1,7 +1,6 @@
 Sourcing of utils is brittle in case of bot installed and cloned version present
 version number
 local variables
-if output is specified, don't prompt for backup dest for signed iso (signed only)
 better traps
-set up xdg_data_dirs for isos + configs (keys paths, mirrors...)
+more configurable things
 Poviders, specific key paths
