@@ -78,7 +78,7 @@ version: 0
        --offline                 Prompt for the paths of necessary files instead of fetching them online
        --output-dir              Output directory for signed iso
        --skip-iso-verification   Do not check iso integrity
-       -v, --verbose                 Verbose output
+       -v, --verbose             Verbose output
 
 EOF
 ```

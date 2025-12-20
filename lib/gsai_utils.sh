@@ -4,7 +4,7 @@
 
 ask() {
     local question="$1"
-    read -rp "$(printf "%s--> %s%s" "${BOLD}" "${ALL_OFF}" "${question}" >&2)" answer
+    read -rp "$(printf "%s--> %s%s" "$BOLD" "$ALL_OFF" "$question " >&2)" answer
 }
 
 read_yes_no() {

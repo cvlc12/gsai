@@ -1,5 +1,4 @@
 version number
---skip-iso-verif
 local variables
 if output is specified, don't prompt for backup dest for signed iso (signed only)
 better traps

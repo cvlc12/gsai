@@ -94,6 +94,41 @@ download_iso() {
 
 verify_iso() {
 
+    if (( offline )); then
+        # Try to find sig in same directory, else ask for it
+        sig="${iso}.sig"
+        if [[ -f "$sig" ]]; then
+            msg "Found ${sig} in same directory!"
+        else
+            ask_path "Arch Linux ISO PGP signature" "sig" "${local_dir}/"
+            [[ -f "$sig" ]] || err "${sig} is not a file"
+        fi
+
+        # Try to find b2sums in same directory, else ask for it
+        b2sums="${local_dir}/b2sums.txt"
+        if [[ -f "$b2sums" ]]; then
+            msg "Found ${b2sums} in same directory!"
+        else
+            ask_path "Arch Linux ISO checksums (b2sums.txt)" "b2sums" "${local_dir}/"
+            [[ -f "$b2sums" ]] || err "${b2sums} is not a file"
+        fi
+    else
+        remote_sig="https://archlinux.org/iso/${release}/archlinux-${release}-x86_64.iso.sig"
+        remote_b2sums="https://archlinux.org/iso/${release}/b2sums.txt"
+
+        curl --silent --output-dir "$work_dir" --progress-bar --remote-name "$remote_sig" || err "Could not download signature!"
+        sig="${work_dir}/archlinux-${release}-x86_64.iso.sig"
+
+        curl --silent --output-dir "$work_dir" --progress-bar --remote-name "$remote_b2sums" || err "Could not download b2sums!"
+        b2sums="${work_dir}/b2sums.txt"
+    fi
+
+    (( verbose )) && {
+        info "ISO" "$iso"
+        info "sig" "$sig"
+        info "b2sums" "$b2sums"
+    }
+
     msg "Verifying ISO..."
 
     # Checksum
@@ -320,9 +355,10 @@ parse_args() {
     
     offline=0
     output_dir=""
+    sudo_cmd=""
+    use_local_iso=0
     verbose=0
     verified_iso=0
-    sudo_cmd=""
 
     # Parse command-line arguments
     while [[ $# -gt 0 ]]; do
@@ -345,6 +381,7 @@ parse_args() {
                 require_arg "$1" "--iso requires a file path"
                 [[ -f "$1" ]] || err "'$1' is not a valid file"
                 iso="$1"
+                use_local_iso=1
                 ;;
             --offline)
                 offline=1
@@ -380,6 +417,7 @@ version: ${version}
        --iso                     Specify an Arch Linux ISO image file
        --offline                 Prompt for the paths of necessary files instead of fetching them online
        --output-dir              Output directory for signed iso
+       --skip-iso-verification   Do not check iso integrity
    -v, --verbose                 Verbose output
 EOF
 }
@@ -425,59 +463,20 @@ work_dir=$(mktemp -d --tmpdir ARCH_ISO.XXX || err "Could not create temporary di
 (( verbose )) && info "Work directory:" "$work_dir"
 
 if (( offline )); then
-    msg "To run offline, valid paths are needed for the Arch Linux ISO, an ISO PGP signature file, and checksums (b2sums.txt)"
 
     # Use the iso if provided via commandline, else ask for it
     [[ -n "$iso" ]] || ask_path "Arch Linux ISO" "iso"
-    [[ -f "$iso" ]] || err "${iso} is not a file"
-    use_local_iso='yes'
 
-    # Store local directory name
+    # Store local directory name to look for sigs/bsums
     local_dir="$(dirname "$iso")"
-    (( verbose )) && info "Using source directory:" "$local_dir"
-
-    # Try to find sig in same directory, else ask for it
-    sig="${iso}.sig"
-    if [[ -f "$sig" ]]; then
-        msg "Found ${sig} in same directory!"
-    else
-        ask_path "Arch Linux ISO PGP signature" "sig" "${local_dir}/"
-        [[ -f "$sig" ]] || err "${sig} is not a file"
-    fi
-
-    # Try to find b2sums in same directory, else ask for it
-    b2sums="${local_dir}/b2sums.txt"
-    if [[ -f "$b2sums" ]]; then
-        msg "Found ${b2sums} in same directory!"
-    else
-        ask_path "Arch Linux ISO checksums (b2sums.txt)" "b2sums" "${local_dir}/"
-        [[ -f "$b2sums" ]] || err "${b2sums} is not a file"
-    fi
-
-    release=$(grep -oP  -m 1 '\b\d{4}\.\d{2}\.\d{2}\b' "$b2sums" || err "Could not determine current release from b2sums file!")
+    
+    release=$(basename "$iso" | grep -oP  -m 1 '\b\d{4}\.\d{2}\.\d{2}\b') || err "Could not determine current release from iso filename!"
 
 else
     release=$(curl --silent "$download_page" 2>&1 | grep -o -m 1 '[0-9]\{4\}\.[0-9]\{2\}\.[0-9]\{2\}' || err "Could not determine current release!")
-    sig="https://archlinux.org/iso/${release}/archlinux-${release}-x86_64.iso.sig"
-    b2sums="https://archlinux.org/iso/${release}/b2sums.txt"
-   
-    (( verbose )) && {
-        info "sig" "$sig"
-        info "b2sums" "$b2sums"
-    }
-
-    curl --silent --output-dir "$work_dir" --progress-bar --remote-name "$sig" || err "Could not download signature!"
-    sig="${work_dir}/archlinux-${release}-x86_64.iso.sig"
-
-    curl --silent --output-dir "$work_dir" --progress-bar --remote-name "$b2sums" || err "Could not download b2sums!"
-    b2sums="${work_dir}/b2sums.txt"
-
-    # Use the iso if it was provided via commandline
-    if [[ -n "$iso" ]]; then
-        [[ -f "$iso" ]] || err "${iso} is not a file!"
-        use_local_iso='yes'
-    else
-        use_local_iso='no'
+    
+    # Download unless provided with --iso
+    if ! (( use_local_iso )); then
 
         # Suggest to download with bittorrent
         #magnet_link=$(curl -s "$download_page" 2>/dev/null | grep -o -m 1 'magnet:[^"]*' || err "Could not get magnet link!")
@@ -495,12 +494,6 @@ else
         download_iso
     fi
 fi
-
-(( verbose )) && {
-    info "ISO" "$iso"
-    info "sig" "$sig"
-    info "b2sums" "$b2sums"
-}
 
 (( verified_iso )) || verify_iso
 
