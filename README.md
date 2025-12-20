@@ -2,24 +2,24 @@
 
 **gsai** is a bash script that automates downloading, verifying, and signing official Arch Linux ISO images for use with Secure Boot and custom signing keys.
 
+![gsai demo](assets/demo.gif)
+
 ## Features:
 
-- Automatically downloads the latest Arch Linux ISO
+- Automatically downloads the latest Arch Linux ISO, using the locally set mirrors
 - Verifies ISO integrity using checksums and PGP signatures
 - Works offline when provided with:
   - an Arch Linux ISO
   - its corresponding PGP signature
   - checksum files
 - Detects custom Secure Boot signing keys in common locations or prompts interactively
-- Signs the official ISO following the Arch Wiki’s  
-  [Secure Boot ISO repacking procedure](https://wiki.archlinux.org/title/Unified_Extensible_Firmware_Interface/Secure_Boot#Sign_the_official_ISO_with_custom_keys)## Installation
+- Signs the official ISO as in [ISO repacking](https://wiki.archlinux.org/title/Unified_Extensible_Firmware_Interface/Secure_Boot#Sign_the_official_ISO_with_custom_keys)
 
 ## Installation
 
 ### AUR
 
-Available on the AUR as  
-[gsai-git](https://aur.archlinux.org/packages/gsai-git)
+Available on the AUR as [gsai-git](https://aur.archlinux.org/packages/gsai-git)
 
 ### Manual Installation
 
@@ -40,19 +40,7 @@ PATH="$HOME/.local/bin:$PATH"
 
 ## Usage
 
-```
-$ gsai --help
-GSAI - Sign Arch Linux ISOs for Secure Boot
-version: 0
-  Options:
-       --autosign                Automatically sign if only one set of Secure Boot signing keys are automatically found
-       --escalate-with           Takes one of 'run0', 'sudo' or 'doas'
-   -h, --help                    Won't help you much
-       --iso                     Specify an Arch Linux ISO image file
-       --offline                 Prompt for the paths of necessary files instead of fetching them online
-   -v, --verbose                 Verbose output
-EOF
-```
+Just run `$ gsai`, or provide an iso with `$ gsai --iso <iso_path>`
 
 ```
 $ gsai 
@@ -68,7 +56,7 @@ gsai - Sign Arch Linux ISOs for Secure Boot
     > Private key         : /etc/kernel/secure-boot-private-key.pem
     > Certificate         : /etc/kernel/secure-boot-certificate.pem
 --> Use these keys to sign the Arch Linux ISO image? (y/n) y
-+ If requested by run0, enter password to access protected Secure Boot keys.
++ If requested enter password to access protected Secure Boot keys.
 + Configuring Arch Linux ISO image...
 DONE! - Successfully created signed ISO: archlinux-2025.12.01-x86_64-signed.iso
 --> Save signed ISO image: archlinux-2025.12.01-x86_64-signed.iso? (y/n) y
@@ -76,6 +64,22 @@ DONE! - Successfully created signed ISO: archlinux-2025.12.01-x86_64-signed.iso
 + Created /home/user/archlinux-2025.12.01-x86_64-signed.iso
 + Removed temporary files, exiting
 
+```
+
+```
+$ gsai --help
+gsai - Sign Arch Linux ISOs for Secure Boot
+version: 0
+  Options:
+       --autosign                Automatically sign if only one set of Secure Boot signing keys are found
+       --escalate-with           Takes one of 'run0' 'sudo' or 'doas'
+   -h, --help                    Won't help you much
+       --iso                     Specify an Arch Linux ISO image file
+       --offline                 Prompt for the paths of necessary files instead of fetching them online
+       --output-dir              Output directory for signed iso
+   -v, --verbose                 Verbose output
+
+EOF
 ```
 
 ## Roadmap
