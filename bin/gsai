@@ -312,6 +312,10 @@ select_keys() {
     fi
 }
 
+require_arg() {
+    [[ -n "$1" && "$1" != -* ]] || err "$2"
+}
+
 parse_args() {
     
     offline=0
@@ -328,8 +332,9 @@ parse_args() {
                 ;;
             --escalate-with)
                 shift
+                require_arg "$1" "--escalate-with requires one of 'run0', 'sudo', or 'doas'."
                 sudo_cmd="$1"
-                [[ "$sudo_cmd" == 'run0' || "$sudo_cmd" == 'sudo' || "$sudo_cmd" == 'doas' ]] || err "Not a valid escalation command"
+                [[ "$sudo_cmd" == 'run0' || "$sudo_cmd" == 'sudo' || "$sudo_cmd" == 'doas' ]] || err "${sudo_cmd} is not a valid escalation command"
                 ;;
             -h | --help)
                 usage
@@ -337,6 +342,8 @@ parse_args() {
                 ;;
             --iso)
                 shift
+                require_arg "$1" "--iso requires a file path"
+                [[ -f "$1" ]] || err "'$1' is not a valid file"
                 iso="$1"
                 ;;
             --offline)
@@ -344,12 +351,10 @@ parse_args() {
                 ;;
             --output-dir)
                 shift
-                if [[ -d "$1" && -w "$1" ]]; then
-                    output_dir="${1%/}"
-                else
-                    err "${1} is not a directory we can write to !"
-                fi
-                ;;          
+                require_arg "$1" "--output-dir requires a path"
+                [[ -d "$1" && -w "$1" ]] || err "'$1' is not a writable directory"
+                output_dir="${1%/}"
+                ;;         
             -v | --verbose)
                 verbose=1
                 ;;

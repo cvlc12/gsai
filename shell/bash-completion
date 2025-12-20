@@ -12,6 +12,9 @@ _gsai() {
         -i | --iso)
             _filedir '@(iso)'
             ;;
+        --output-dir)
+            _filedir -d
+            ;;
         *)
             mapfile -t COMPREPLY < <(compgen -W "${opts[*]}" -- "$cur")
             ;;

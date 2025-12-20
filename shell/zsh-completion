@@ -3,18 +3,12 @@
 
 #compdef gsai
 
-case $service in
-    gsai)
-        _arguments : \
-            '--autosign[Automatically sign if only one set of Secure Boot signing keys are automatically found]' \
-            '--escalate-with[Takes one of sudo or doas to avoid using run0]' \
-            '(-h --help)'{-h,--help}'[Will not help you much]' \
-            '--iso[Specify an Arch Linux ISO image file]' \
-            '--offline[Prompt for the paths of necessary files instead of fetching them online]' \
-            '--output-dir[Specify output directory]' \
-            '(-v --verbose)'{-v,--verbose}'[Verbose output]'
-        ;;
-    *)
-        return 1;
-        ;;
-esac
+_arguments \
+  '--autosign[Automatically sign if only one set of Secure Boot keys is found]' \
+  '--escalate-with=[Privilege escalation command]:command:(run0 sudo doas)' \
+  '(-h --help)'{-h,--help}'[Show help message]' \
+  '--iso=[Path to Arch Linux ISO image]:iso file:_files' \
+  '--offline[Prompt for required files instead of downloading them]' \
+  '--output-dir=[Writable output directory]:directory:_files -/' \
+  '(-v --verbose)'{-v,--verbose}'[Enable verbose output]'
+
