@@ -470,7 +470,7 @@ version: ${version}
        --autosign yes|no         Automatically sign if only one set of Secure Boot signing keys is found
                                  (default: yes)
    -c  --config <PATH>           Specify a configuration file
-       --escalate-with           Takes one of 'run0' 'sudo' or 'doas'
+       --escalate-with           Takes one of 'run0' 'sudo' or 'doas' (default: run0)
    -h, --help                    Won't help you much
        --iso <PATH>              Specify an Arch Linux ISO image file
        --offline                 Prompt for the paths of necessary files instead of fetching them online
