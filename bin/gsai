@@ -10,7 +10,6 @@ trap 'clean' EXIT
 # Configuration
 download_page="https://archlinux.org/download/"
 
-# Clean temporary files before exiting
 backup_iso() {
 
     local source=${1}
@@ -462,7 +461,6 @@ EOF
 # Script
 # ----------------------------------------------------------------------------------------
 
-debug=1
 # Default library directory (installed location)
 : "${GSAI_LIBDIR:=/usr/lib/gsai}"
 
@@ -470,13 +468,11 @@ if [[ -r "$GSAI_LIBDIR/gsai_utils.sh" ]]; then
     # Installed mode
     # shellcheck source=/usr/lib/gsai/gsai_utils.sh
     source "$GSAI_LIBDIR/gsai_utils.sh"
-    (( debug )) && info "sourced ${GSAI_LIBDIR}/gsai_utils.sh"
 else
     # Development mode (git clone)
     SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
     # shellcheck source=../lib/gsai_utils.sh
     source "${SCRIPT_DIR}/../lib/gsai_utils.sh"
-    (( debug )) && info "${SCRIPT_DIR}/../lib/gsai_utils.sh"
 fi
 
 # Enable colors
