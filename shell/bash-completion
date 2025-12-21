@@ -3,23 +3,45 @@
 # Copyright (c) 2025 cvlc12
 
 _gsai() {
-    local cur prev opts
-    opts=(--autosign --config --escalate-with -h --help --iso --offline --output-dir --skip-iso-verification -v --verbose)
-
+    local cur prev
     _get_comp_words_by_ref cur prev
 
-    case $prev in
-        -i | --iso)
-            _filedir '@(iso)'
+    local opts=(
+        --autosign
+        --config
+        --escalate-with
+        -h --help
+        --iso
+        --offline
+        --output-dir
+        --verify-iso
+        -v --verbose
+    )
+
+    case "$prev" in
+        --autosign|--verify-iso)
+            mapfile -t COMPREPLY < <(
+                compgen -W "yes no" -- "$cur"
+            )
+            ;;
+        --escalate-with)
+            mapfile -t COMPREPLY < <(
+                compgen -W "run0 sudo doas" -- "$cur"
+            )
+            ;;
+        --iso)
+            _filedir 'iso'
             ;;
         --config)
-            _filedir '@(conf)'
+            _filedir 'conf'
             ;;
         --output-dir)
             _filedir -d
             ;;
         *)
-            mapfile -t COMPREPLY < <(compgen -W "${opts[*]}" -- "$cur")
+            mapfile -t COMPREPLY < <(
+                compgen -W "${opts[*]}" -- "$cur"
+            )
             ;;
     esac
 }

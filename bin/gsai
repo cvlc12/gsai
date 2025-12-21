@@ -10,22 +10,23 @@ trap 'clean' EXIT
 # Configuration
 download_page="https://archlinux.org/download/"
 
-backup_iso() {
+save_iso() {
 
     local source=${1}
+    local status=${2}
     local filename
     filename="$(basename "$source")"
 
     if [[ -n "$output_dir" ]]; then
         dest="${output_dir}/${filename}"
     else
-        ask_path "back up ISO" dest "${local_dir:-${HOME}}/${filename}"
+        ask_path "save ${status} ISO" dest "${local_dir:-${HOME}}/${filename}"
         [[ -n "$dest" ]] || err "No path provided"
     fi
 
     # TODO: don't overwrite existing file, deal with existing files
     if mv "$source" "${dest:?}" &>/dev/null; then
-        msg_green "DONE!" "Successfully created ${dest}"
+        msg "Successfully created ${dest}"
     else
         err "Could not backup to ${dest}, did not clean up ${work_dir}"
     fi
@@ -36,15 +37,15 @@ clean() {
     # If we have not done anything yet, simply exit
     [[ -z "$work_dir" ]] && exit 0
 
-    # If we successfully signed an ISO then suggest to save it before cleaning up
-    if [[ -f "$signed_iso" ]]; then
-        backup_iso "$signed_iso" || err "Could not back up iso."
+    # If we successfully signed an ISO then save it before cleaning up
+    if (( success )); then
+        save_iso "$signed_iso" 'signed' || err "Could not back up iso."
     fi
 
     # If we downloaded and verified an ISO, then suggest to save it before cleaning up
     if (( ! use_local_iso && verified_iso )); then
         if read_yes_no "Save verified (*unsigned*) ISO image?"; then
-            backup_iso "$iso" || err "Could not back up verified (unsigned!) iso."
+            save_iso "$iso" 'unsigned' || err "Could not back up verified (unsigned!) iso."
         fi
     fi
 
@@ -154,9 +155,6 @@ select_keys() {
     key_path_list=()
 
     (( verbose )) && msg "Locating keys..."
-
-    # Try to locate existing keys. Maximum 9 items in key_path_list (in local_keys really) or the 'case' code below needs modification.
-    # TODO: there 'might' be more than 9 items
     
     # 1. Try user supplied config files
         if [[ -n "$config_file" ]]; then
@@ -212,10 +210,13 @@ select_keys() {
         "/etc/systemd/secure-boot.key.pem /etc/systemd/secure-boot.cert.pem"
     )
 
-    # Test key pairs
-    declare -A seen_pairs  # Associative array for deduplication
+    # 5. Deduplicate list 
+    declare -A seen_pairs
 
     for key_pair in "${key_path_list[@]}"; do
+        # Only allow 9 items (this should be enough and makes sure the key selection menu works properly)
+        (( ${#local_keys[@]} >= 9 )) && break
+
         read -r key cert <<< "$key_pair"
         if [[ -f "$key" && -f "$cert" && -z "${seen_pairs[$key_pair]}" ]]; then
             local_keys+=("$key_pair")
@@ -225,7 +226,7 @@ select_keys() {
         fi
     done
 
-    # Select from local keys
+    # 6. Key selection
     case "${#local_keys[@]}" in
         0)
             (( verbose )) && info "Could not locate any Secure Boot keys..."
@@ -246,6 +247,7 @@ select_keys() {
             if (( sign )); then
                 read -r key cert <<< "${local_keys[0]}"
             else
+                # We'll prompt for manual selection of key
                 unset key cert
             fi
             ;;
@@ -288,7 +290,7 @@ select_keys() {
             ;;
     esac
 
-    # Select keys manually
+    # 7. Prompt for paths keys manually
     if [[ -z "$key" || -z "$cert" ]]; then
 
         ask_path "Secure Boot private key" key
@@ -320,21 +322,20 @@ select_keys() {
             info "Keys are readable! This might be a security risk."
             sign_cmd=("$sign_util")
         elif [[ -n "$sudo_cmd" ]]; then
-            (( verbose )) && info "Elevating privileges with ${sudo_cmd}."
+            (( verbose )) && info "Privilege escalation with ${sudo_cmd}."
             sign_cmd=("$sudo_cmd" "$sign_util")
         else
             (( verbose )) && info "Keys are not readable, trying to elevate privileges."
             
             msg "If requested, enter password to access protected Secure Boot keys."
 
-            # Verify we can use run0
-            # Currently run0 requires re-auth for every file...
-            min_pk_ver=128
+            # Verify we can use run0. Before polkit v127, run0 requires re-auth for every file to sign...
+            min_pk_ver=127
 
             if command_exists 'pkcheck'; then
                 version=$(pkcheck --version 2>/dev/null | awk '{print $NF}')
                 if [[ $version =~ ^[0-9]+$ ]] && (( version >= min_pk_ver )); then
-                    (( verbose )) && info "Using run0"
+                    (( verbose )) && info "Privilege escalation with run0"
                     sudo_cmd=run0
                 fi
             fi
@@ -347,7 +348,7 @@ select_keys() {
                 # Verify sudo
                 if command_exists 'sudo'; then
                     if sudo -l &>/dev/null; then
-                        (( verbose )) && info "Using sudo"
+                        (( verbose )) && info "Privilege escalation with sudo"
                         sudo_cmd=sudo
                     fi
                 fi
@@ -360,7 +361,8 @@ select_keys() {
 
                 # Verify doas
                 if command_exists 'doas'; then
-                    sudo_cmd=sudo
+                    (( verbose )) && info "Privilege escalation with doas"
+                    sudo_cmd=doas
                 else
                     (( verbose )) && info "Not using 'doas', not installed."
                     err "⚠️  Could not elevate privileges. Try running as root."  
@@ -383,6 +385,7 @@ parse_args() {
     
     offline=0
     output_dir=""
+    sign=1
     sudo_cmd=""
     use_local_iso=0
     verbose=0
@@ -392,9 +395,15 @@ parse_args() {
     while [[ $# -gt 0 ]]; do
         case $1 in
             --autosign)
-                sign=1
+                shift
+                require_arg "$1" "--autosign requires 'yes' or 'no'"
+                case "$1" in
+                    yes | y) sign=1 ;;
+                    no | n)  sign=0 ;;
+                    *) err "--autosign must be 'yes' or 'no'" ;;
+                esac
                 ;;
-            --config)
+            -c | --config)
                 shift
                 require_arg "$1" "--config requires a configuration file path"
                 [[ -f "$1" ]] || err "'$1' is not a valid file"               
@@ -403,8 +412,16 @@ parse_args() {
             --escalate-with)
                 shift
                 require_arg "$1" "--escalate-with requires one of 'run0', 'sudo', or 'doas'."
-                sudo_cmd="$1"
-                [[ "$sudo_cmd" == 'run0' || "$sudo_cmd" == 'sudo' || "$sudo_cmd" == 'doas' ]] || err "${sudo_cmd} is not a valid escalation command"
+                case "$1" in
+                    run0 | sudo | doas)
+                        if command_exists "$1"; then
+                            sudo_cmd="$1" 
+                        else
+                            err "${1} is not installed"
+                        fi
+                        ;;
+                    *) err "${1} is not a valid escalation command" ;;
+                esac
                 ;;
             -h | --help)
                 usage
@@ -426,14 +443,19 @@ parse_args() {
                 [[ -d "$1" && -w "$1" ]] || err "'$1' is not a writable directory"
                 output_dir="${1%/}"
                 ;;         
-            --skip-iso-verification)
-                verify_iso=0
+            --verify-iso)
+                shift
+                require_arg "$1" "--verify-iso requires 'yes' or 'no'"
+                case "$1" in
+                    yes | y) verify_iso=1 ;;
+                    no | n)  verify_iso=0 ;;
+                    *) err "--verify-iso must be 'yes' or 'no'" ;;
+                esac
                 ;;
             -v | --verbose)
                 verbose=1
                 ;;
             *)
-                usage
                 err "Unknown option: $1"
                 ;;
         esac
@@ -445,14 +467,15 @@ usage() {
     cat <<EOF
 version: ${version}
   Options:
-       --autosign                Automatically sign if only one set of Secure Boot signing keys is found
-       --config                  Specify a configuration file
+       --autosign yes|no         Automatically sign if only one set of Secure Boot signing keys is found
+                                 (default: yes)
+   -c  --config <PATH>           Specify a configuration file
        --escalate-with           Takes one of 'run0' 'sudo' or 'doas'
    -h, --help                    Won't help you much
-       --iso                     Specify an Arch Linux ISO image file
+       --iso <PATH>              Specify an Arch Linux ISO image file
        --offline                 Prompt for the paths of necessary files instead of fetching them online
-       --output-dir              Output directory for signed iso
-       --skip-iso-verification   Do not check iso integrity
+       --output-dir <PATH>       Output directory for signed iso
+       --verify-iso yes|no       Check iso integrity (default: yes)
    -v, --verbose                 Verbose output
 EOF
 }
@@ -552,7 +575,6 @@ osirrox -indev "$iso" \
 
 # Sign all extracted files
 files=(BOOTx64.EFI BOOTIA32.EFI shellx64.efi shellia32.efi vmlinuz-linux)
-
 for file in "${files[@]}"; do
     chmod +w "${work_dir}/${file}" || err "Could not make boot files writable!"
     "${sign_cmd[@]}" --private-key "$key" --certificate "$cert" sign "${work_dir}/${file}" --output "${work_dir}/${file}" &>/dev/null || err "Could not sign ${file}!"
@@ -576,4 +598,5 @@ xorriso -indev "$iso" \
     -boot_image any replay \
     -append_partition 2 0xef "${work_dir}/eltorito_img2_uefi.img" &>/dev/null || err "Could not repack with xorriso!"
 
-(( verbose )) && info "Successfully created signed ISO: $(basename "$signed_iso")"
+msg_green "DONE!" "Successfully signed and repacked the ISO."
+success=1

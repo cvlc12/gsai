@@ -4,12 +4,12 @@
 #compdef gsai
 
 _arguments \
-  '--autosign[Automatically sign if only one set of Secure Boot keys is found]' \
+  '--autosign=[Automatically sign if only one set of Secure Boot keys is found (default: yes)]:yes/no:(yes y no n)' \
   '--config=[Path to configuration file]:conf file:_files' \
   '--escalate-with=[Privilege escalation command]:command:(run0 sudo doas)' \
   '(-h --help)'{-h,--help}'[Show help message]' \
   '--iso=[Path to Arch Linux ISO image]:iso file:_files' \
   '--offline[Prompt for required files instead of downloading them]' \
   '--output-dir=[Writable output directory]:directory:_files -/' \
-  '--skip-iso-verification[Do not check iso integrity]' \
+  '--verify-iso=[Verify ISO integrity (default: yes)]:yes/no:(yes y no n)' \
   '(-v --verbose)'{-v,--verbose}'[Enable verbose output]'

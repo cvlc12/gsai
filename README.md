@@ -42,6 +42,14 @@ PATH="$HOME/.local/bin:$PATH"
 
 Just run `$ gsai`, or provide an iso with `$ gsai --iso <iso_path>`
 
+gsai will try to locate your keys in popular places. If they are not automatically discovered, you will be prompted for a path. You can also specify them in a `.conf` file in "${XDG_CONFIG_HOME}/gsai/" or "/etc/gsai/", e.g:
+
+```
+$ cat ~/.config/gsai/keys.conf
+key=/path/to/key
+cert=/path/to/cert
+```
+
 ```
 $ gsai 
 gsai - Sign Arch Linux ISOs for Secure Boot
@@ -69,27 +77,19 @@ DONE! - Successfully created signed ISO: archlinux-2025.12.01-x86_64-signed.iso
 ```
 $ gsai --help
 gsai - Sign Arch Linux ISOs for Secure Boot
-version: 0
   Options:
-       --autosign                Automatically sign if only one set of Secure Boot signing keys are found
-       --config                  Specify a configuration file
+       --autosign yes|no         Automatically sign if only one set of Secure Boot signing keys is found
+                                 (default: yes)
+   -c  --config <PATH>           Specify a configuration file
        --escalate-with           Takes one of 'run0' 'sudo' or 'doas'
    -h, --help                    Won't help you much
-       --iso                     Specify an Arch Linux ISO image file
+       --iso <PATH>              Specify an Arch Linux ISO image file
        --offline                 Prompt for the paths of necessary files instead of fetching them online
-       --output-dir              Output directory for signed iso
-       --skip-iso-verification   Do not check iso integrity
-       -v, --verbose             Verbose output
+       --output-dir <PATH>       Output directory for signed iso
+       --verify-iso yes|no       Check iso integrity (default: yes)
+   -v, --verbose                 Verbose output
 
 EOF
-```
-
-If your private key and certificate are not automatically discovered, you can specify them in a `.conf` file in "${XDG_CONFIG_HOME}/gsai/" or "/etc/gsai/", e.g:
-
-```
-$ cat ~/.config/gsai/keys.conf
-key=/path/to/key
-cert=/path/to/cert
 ```
 
 ## Roadmap
