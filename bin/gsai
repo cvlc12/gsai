@@ -27,6 +27,12 @@ save_iso() {
     # TODO: don't overwrite existing file, deal with existing files
     if mv "$source" "${dest:?}" &>/dev/null; then
         msg "Successfully created ${dest}"
+
+        # For signed iso, print an example burn command
+        if [[ "$status" == 'signed' ]]; then
+            msg "Burn with e.g.:"
+            info "dd bs=4M if=${dest} of=/dev/<device> conv=fsync oflag=direct status=progress"
+        fi
     else
         err "Could not backup to ${dest}, did not clean up ${work_dir}"
     fi
@@ -44,8 +50,8 @@ clean() {
 
     # If we downloaded and verified an ISO, then suggest to save it before cleaning up
     if (( ! use_local_iso && verified_iso )); then
-        if read_yes_no "Save verified (*unsigned*) ISO image?"; then
-            save_iso "$iso" 'unsigned' || err "Could not back up verified (unsigned!) iso."
+        if read_yes_no "Save downloaded original (*unsigned*) ISO image?"; then
+            save_iso "$iso" 'unsigned' || err "Could not back up original (unsigned) iso."
         fi
     fi
 
