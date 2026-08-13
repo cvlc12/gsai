@@ -576,11 +576,10 @@ osirrox -indev "$iso" \
     -cpx /arch/boot/x86_64/vmlinuz-linux \
         /EFI/BOOT/BOOTx64.EFI \
         /EFI/BOOT/BOOTIA32.EFI \
-        /shellx64.efi \
-        /shellia32.efi "$work_dir" &>/dev/null || err "Could not run osirrox command!"
+        /shellx64.efi "$work_dir" &>/dev/null || err "Could not run osirrox command!"
 
 # Sign all extracted files
-files=(BOOTx64.EFI BOOTIA32.EFI shellx64.efi shellia32.efi vmlinuz-linux)
+files=(BOOTx64.EFI BOOTIA32.EFI shellx64.efi vmlinuz-linux)
 for file in "${files[@]}"; do
     chmod +w "${work_dir}/${file}" || err "Could not make boot files writable!"
     "${sign_cmd[@]}" --private-key "$key" --certificate "$cert" sign "${work_dir}/${file}" --output "${work_dir}/${file}" &>/dev/null || err "Could not sign ${file}!"
@@ -590,7 +589,7 @@ done
 ## Repack
 mcopy -D oO -i "${work_dir}/eltorito_img2_uefi.img" "${work_dir}/vmlinuz-linux" ::/arch/boot/x86_64/vmlinuz-linux || err "Could not run mcopy command!"
 mcopy -D oO -i "${work_dir}/eltorito_img2_uefi.img" "${work_dir}/BOOTx64.EFI" "${work_dir}/BOOTIA32.EFI" ::/EFI/BOOT/ || err "Could not run mcopy command!"
-mcopy -D oO -i "${work_dir}/eltorito_img2_uefi.img" "${work_dir}/shellx64.efi" "${work_dir}/shellia32.efi" ::/ || err "Could not run mcopy command!"
+mcopy -D oO -i "${work_dir}/eltorito_img2_uefi.img" "${work_dir}/shellx64.efi" ::/ || err "Could not run mcopy command!"
 (( verbose )) && info "Ran mcopy commands"
 
 signed_iso="${work_dir}/archlinux-${release}-x86_64-signed.iso"
@@ -600,7 +599,7 @@ xorriso -indev "$iso" \
     -outdev "$signed_iso" \
     -map "${work_dir}/vmlinuz-linux" /arch/boot/x86_64/vmlinuz-linux \
     -map_l "${work_dir}/" /EFI/BOOT/ "${work_dir}/BOOTx64.EFI" "${work_dir}/BOOTIA32.EFI" -- \
-    -map_l "${work_dir}/" / "${work_dir}/shellx64.efi" "${work_dir}/shellia32.efi" -- \
+    -map_l "${work_dir}/" / "${work_dir}/shellx64.efi" -- \
     -boot_image any replay \
     -append_partition 2 0xef "${work_dir}/eltorito_img2_uefi.img" &>/dev/null || err "Could not repack with xorriso!"
 
